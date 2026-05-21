@@ -53,6 +53,7 @@ def send_message():
         print(data)
 
         thread_id = ObjectId(data["threadId"])
+        print("Thread ID:", thread_id)
         user_id = ObjectId(data["userId"])
         user_msg = data["msg"]
 
@@ -65,7 +66,7 @@ def send_message():
             "createdAt": datetime.now(timezone.utc)
         })
 
-       # Auto generate title from first message
+        # Auto generate title from first message
         thread = chat_threads.find_one({
             "_id": thread_id
         })
@@ -73,10 +74,10 @@ def send_message():
 
         if thread and thread["title"] == "New Chat":
 
-           title = user_msg[:30]
-           print("Generated Title:", title)
+            title = user_msg[:30]
+            print("Generated Title:", title)
 
-           chat_threads.update_one(
+            chat_threads.update_one(
                 {"_id": thread_id},
                 {
                     "$set": {
@@ -84,7 +85,10 @@ def send_message():
                     }
                 }
             )
-           print("Thread updated with new title:", title)
+            print("Thread updated with new title:", title)
+
+            # 🔥 RE-FETCH UPDATED THREAD
+            updated_thread = chat_threads.find_one({"_id": thread_id})
 
         # 2. Get AI response
         start = datetime.now(timezone.utc)
@@ -134,11 +138,15 @@ def send_message():
             }
         )
 
-        return jsonify({
-            "success": True,
-            "answer": answer,
-            "responseTime": response_time
-        })
+        return jsonify(
+            {
+                "success": True,
+                "answer": answer,
+                "title": updated_thread["title"],  # ✅ FIXED
+                "threadId": str(thread_id),
+                "responseTime": response_time,
+            }
+        )
 
     except Exception as e:
 
@@ -149,8 +157,9 @@ def send_message():
             "message": str(e)
         }), 500
 
+
 # =========================
-# GET THREADS & MESSAGES                    
+# GET THREADS & MESSAGES
 # =========================
 @chat_bp.route("/threads/<thread_id>", methods=["GET"])
 def get_messages(thread_id):
@@ -168,7 +177,6 @@ def get_messages(thread_id):
             } for m in messages
         ]
     }
-
 
 
 # =========================

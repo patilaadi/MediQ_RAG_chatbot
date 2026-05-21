@@ -1,16 +1,9 @@
-import {
-  Menu,
-  Plus,
-  MessageSquare,
-  User,
-  LogOut,
-} from "lucide-react";
+import { Menu, Plus, MessageSquare, User, LogOut } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 import { useEffect, useState } from "react";
 import EditProfileModal from "./EditProfileModal";
 import axios from "axios";
-
 
 const normalizeMessages = (msgs) => {
   return msgs.map((m) => ({
@@ -19,45 +12,29 @@ const normalizeMessages = (msgs) => {
   }));
 };
 
+const ChatSidebar = ({ open, setOpen }) => {
+  const [showMenu, setShowMenu] = useState(false);
 
-const ChatSidebar = ({
-  open,
-  setOpen,
-}) => {
-
-
-  const [showMenu, setShowMenu] =
-    useState(false);
-
-  const [editOpen, setEditOpen] =
-    useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const navigate = useNavigate();
 
   const [activeThread, setActiveThread] = useState(null);
   const [threads, setThreads] = useState([]);
 
-
-
   const [user, setUser] = useState({});
   useEffect(() => {
-
     const fetchUser = async () => {
-
       try {
-
-
         const email = localStorage.getItem("email");
         console.log(email);
         const res = await axios.get(
           `http://localhost:8080/api/auth/user/${email}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem(
-                "token"
-              )}`,
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
-          }
+          },
         );
         setUser(res.data.user);
       } catch (err) {
@@ -67,10 +44,9 @@ const ChatSidebar = ({
     fetchUser();
   }, []);
 
-
   useEffect(() => {
-
     const userId = localStorage.getItem("userId");
+    console.log("USER ID:", userId);
 
     if (!userId) {
       console.log("User ID not found");
@@ -80,77 +56,74 @@ const ChatSidebar = ({
     fetch(`http://localhost:8080/api/threads/${userId}`)
       .then((res) => res.json())
       .then((data) => {
+        console.log("THREADS:", data);
         setThreads(data.threads || []);
       })
       .catch((err) => {
         console.log(err);
       });
-
   }, []);
 
   // Logout
   const handleLogout = () => {
-
     localStorage.clear();
 
-    window.location.href =
-      "/signin";
+    window.location.href = "/signin";
   };
 
+  // ================= REALTIME UPDATE LISTENER =================
+  useEffect(() => {
+    const handler = (e) => {
+      const { threadId, title } = e.detail;
 
+      setThreads((prev) =>
+        prev.map((t) => ((t._id || t.id) === threadId ? { ...t, title } : t)),
+      );
+    };
 
+    window.addEventListener("threadUpdated", handler);
+
+    return () => {
+      window.removeEventListener("threadUpdated", handler);
+    };
+  }, []);
   const createChat = async () => {
-
     try {
-
       const userId = localStorage.getItem("userId");
 
-      const res = await fetch(
-        "http://localhost:8080/api/threads/create",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ userId }),
-        }
-      );
+      const res = await fetch("http://localhost:8080/api/threads/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId }),
+      });
 
       const data = await res.json();
 
       const newThread = {
-        id: data.threadId,
+        _id: data.threadId,
         title: "New Chat",
       };
 
-      setThreads((prev) => [
-        newThread,
-        ...prev,
-      ]);
+      // 🔥 THIS IS IMPORTANT
+      setThreads((prev) => [newThread, ...prev]);
 
-      navigate(
-        `/chat/${user.name}/${data.threadId}`
-      );
+      setActiveThread(data.threadId);
 
+      navigate(`/chat/${user.name}/${data.threadId}`);
     } catch (err) {
-
       console.log(err);
-
     }
-
   };
 
   return (
     <>
       <div className="w-full h-full bg-[#202123] text-white flex flex-col border-r border-gray-800">
-
         {/* Top */}
         <div className="p-4 flex items-center justify-between">
-
           <button
-            onClick={() =>
-              setOpen(!open)
-            }
+            onClick={() => setOpen(!open)}
             className="
             p-2
             hover:bg-[#2A2B32]
@@ -158,9 +131,7 @@ const ChatSidebar = ({
             transition-all
           "
           >
-
             <Menu size={22} />
-
           </button>
 
           {open && (
@@ -175,12 +146,10 @@ const ChatSidebar = ({
             "
             />
           )}
-
         </div>
 
         {/* New Chat */}
         <div className="px-3">
-
           <button
             onClick={createChat}
             className="
@@ -195,44 +164,28 @@ const ChatSidebar = ({
             transition-all
           "
           >
-
             <Plus size={20} />
 
-            {open && (
-              <span>New Chat</span>
-            )}
-
+            {open && <span>New Chat</span>}
           </button>
-
         </div>
 
         {/* Recent */}
         {open && (
           <div className="px-4 mt-6 mb-2">
-
-            <h2 className="text-gray-400 text-sm uppercase">
-
-              Recent
-
-            </h2>
-
+            <h2 className="text-gray-400 text-sm uppercase">Recent</h2>
           </div>
         )}
 
         {/* Chats */}
         <div className="flex-1 overflow-y-auto px-2">
-
           {threads.map((chat) => (
             <button
-              key={chat.id}
+              key={chat.id || chat._id}
               onClick={() => {
-
-                setActiveThread(chat.id);
-
-                navigate(
-                  `/chat/${user.name}/${chat.id}`
-                );
-
+                const id = chat._id || chat.id;
+                setActiveThread(id);
+                navigate(`/chat/${user.name}/${id}`);
               }}
               className="
                         w-full
@@ -256,17 +209,13 @@ const ChatSidebar = ({
               )}
             </button>
           ))}
-
         </div>
 
         {/* Profile Section */}
         <div className="relative p-3 border-t border-gray-800">
-
           {/* Profile Button */}
           <button
-            onClick={() =>
-              setShowMenu(!showMenu)
-            }
+            onClick={() => setShowMenu(!showMenu)}
             className="
             w-full
             flex
@@ -278,7 +227,6 @@ const ChatSidebar = ({
             transition-all
           "
           >
-
             {/* Profile Image */}
             <img
               src={user?.picture}
@@ -293,30 +241,16 @@ const ChatSidebar = ({
 
             {/* Name */}
             {open && (
-
               <div className="flex-1 text-left">
+                <p className="text-sm font-medium">{user?.name}</p>
 
-                <p className="text-sm font-medium">
-
-                  {user?.name}
-
-                </p>
-
-                <p className="text-xs text-gray-400 truncate">
-
-                  {user?.email}
-
-                </p>
-
+                <p className="text-xs text-gray-400 truncate">{user?.email}</p>
               </div>
-
             )}
-
           </button>
 
           {/* Dropdown Menu */}
           {showMenu && open && (
-
             <div
               className="
               absolute
@@ -331,17 +265,13 @@ const ChatSidebar = ({
               overflow-hidden
             "
             >
-
               {/* Personal Info */}
               <button
                 onClick={() => {
-
                   setEditOpen(true);
 
                   setShowMenu(false);
-
                 }}
-
                 className="
                 w-full
                 flex
@@ -353,15 +283,9 @@ const ChatSidebar = ({
                 transition-all
               "
               >
-
                 <User size={18} />
 
-                <span>
-
-                  Personal Info
-
-                </span>
-
+                <span>Personal Info</span>
               </button>
 
               {/* Logout */}
@@ -379,23 +303,13 @@ const ChatSidebar = ({
                 transition-all
               "
               >
-
                 <LogOut size={18} />
 
-                <span>
-
-                  Logout
-
-                </span>
-
+                <span>Logout</span>
               </button>
-
             </div>
-
           )}
-
         </div>
-
       </div>
       <EditProfileModal
         open={editOpen}

@@ -15,8 +15,6 @@ const ChatBox = () => {
 
   const chatEndRef = useRef(null);
 
-
-
   const [messages, setMessages] = useState([
     {
       sender: "assistant",
@@ -40,7 +38,6 @@ const ChatBox = () => {
     setLoading(true);
 
     try {
-
       const token = localStorage.getItem("token");
       const userId = localStorage.getItem("userId");
 
@@ -58,12 +55,21 @@ const ChatBox = () => {
         body: JSON.stringify({
           msg: currentMessage,
           threadId: threadId,
-           userId: userId,
+          userId: userId,
         }),
       });
 
       const data = await res.json();
 
+      // 🔥 send real DB/title to sidebar
+      window.dispatchEvent(
+        new CustomEvent("threadUpdated", {
+          detail: {
+            threadId,
+            title: data.title, // ✅ use backend title
+          },
+        }),
+      );
       const fullText = data.answer;
 
       // empty assistant message
@@ -76,10 +82,7 @@ const ChatBox = () => {
 
       // typing effect
       for (let i = 0; i < fullText.length; i++) {
-
-        await new Promise((resolve) =>
-          setTimeout(resolve, 15)
-        );
+        await new Promise((resolve) => setTimeout(resolve, 15));
 
         botMessage.text += fullText[i];
 
@@ -91,9 +94,7 @@ const ChatBox = () => {
           return updated;
         });
       }
-
     } catch (error) {
-
       setMessages((prev) => [
         ...prev,
         {
@@ -101,7 +102,6 @@ const ChatBox = () => {
           text: "⚠️ Server error",
         },
       ]);
-
     }
 
     setLoading(false);
@@ -117,42 +117,31 @@ const ChatBox = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-
   useEffect(() => {
+    if (!threadId) return;
 
-  if (!threadId) return;
-
-  fetch(`http://localhost:8080/api/threads/${threadId}`)
-
-    .then(res => res.json())
-
-    .then(data => {
-
-      if (
-        data.messages &&
-        data.messages.length > 0
-      ) {
-
-        setMessages(data.messages);
-
-      } else {
-
-        setMessages([
-          {
-            sender: "assistant",
-            text: `Hello ${cleanName} 👋 , how can I help you today?`,
-          },
-        ]);
-
-      }
-
-    });
-
-}, [threadId]);
-
+    fetch(`http://localhost:8080/api/threads/${threadId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.messages?.length > 0) {
+          setMessages(
+            data.messages.map((m) => ({
+              sender: m.role,
+              text: m.content,
+            })),
+          );
+        } else {
+          setMessages([
+            {
+              sender: "assistant",
+              text: `Hello ${cleanName} 👋 , how can I help you today?`,
+            },
+          ]);
+        }
+      });
+  }, [threadId]);
   return (
     <div className="flex flex-col h-full bg-[#343541]">
-
       {/* Header */}
       <div className="h-16 border-b border-gray-700 flex items-center px-6 text-white font-semibold text-lg">
         MediQ AI
@@ -167,7 +156,6 @@ const ChatBox = () => {
           py-6
         "
       >
-
         <div
           className="
             w-full
@@ -176,20 +164,14 @@ const ChatBox = () => {
             space-y-6
           "
         >
-
           {messages.map((msg, index) => (
-
             <div
               key={index}
               className={`
                 flex
-                ${msg.sender === "user"
-                  ? "justify-end"
-                  : "justify-start"
-                }
+                ${msg.sender === "user" ? "justify-end" : "justify-start"}
               `}
             >
-
               <div
                 className={`
                   max-w-[75%]
@@ -198,34 +180,26 @@ const ChatBox = () => {
                   rounded-2xl
                   text-white
                   shadow-lg
-                  ${msg.sender === "user"
-                    ? "bg-green-600 rounded-br-md"
-                    : "bg-[#444654] rounded-bl-md"
+                  ${
+                    msg.sender === "user"
+                      ? "bg-green-600 rounded-br-md"
+                      : "bg-[#444654] rounded-bl-md"
                   }
                 `}
               >
-
                 {msg.text}
-
               </div>
-
             </div>
-
           ))}
           {loading && messages[messages.length - 1]?.sender !== "assistant" && (
-
             <TypingLoader />
-
           )}
           <div ref={chatEndRef} />
-
         </div>
-
       </div>
 
       {/* Input Area */}
       <div className="w-full px-4 pb-6 bg-[#343541]">
-
         <div
           className="
             max-w-4xl
@@ -242,7 +216,6 @@ const ChatBox = () => {
             gap-3
           "
         >
-
           {/* Attachment */}
           <button
             className="
@@ -252,18 +225,14 @@ const ChatBox = () => {
               pb-2
             "
           >
-
             <Paperclip size={22} />
-
           </button>
 
           {/* Textarea */}
           <textarea
             rows={1}
             value={message}
-            onChange={(e) =>
-              setMessage(e.target.value)
-            }
+            onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Message MediQ AI..."
             className="
@@ -298,11 +267,8 @@ const ChatBox = () => {
               disabled:cursor-not-allowed
             "
           >
-
             <SendHorizonal size={18} />
-
           </button>
-
         </div>
 
         {/* Footer */}
@@ -314,14 +280,9 @@ const ChatBox = () => {
             mt-3
           "
         >
-
-          MediQ AI can make mistakes.
-          Verify important medical information.
-
+          MediQ AI can make mistakes. Verify important medical information.
         </p>
-
       </div>
-
     </div>
   );
 };
