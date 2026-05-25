@@ -1,9 +1,17 @@
 import { useState } from "react";
 
+const modelOptions = [
+  { label: "gpt-4o-mini (OpenRouter free)", value: "gpt-4o-mini" },
+  { label: "gpt-3.5-mini (OpenRouter free)", value: "gpt-3.5-mini" },
+  { label: "llama-2-7b-chat (OpenRouter free)", value: "llama-2-7b-chat" },
+  { label: "mistral-small (OpenRouter free)", value: "mistral-small" },
+  { label: "gpt-3.5-turbo (OpenRouter free)", value: "gpt-3.5-turbo" },
+];
+
 const Settings = () => {
 
   const [settings, setSettings] = useState({
-    model: "meta-llama/llama-3-8b-instruct",
+    model: "gpt-4o-mini",
     temperature: 0.2,
     top_k: 3,
   });
@@ -33,8 +41,11 @@ const Settings = () => {
 
       <div className="bg-white p-8 rounded-xl shadow w-[500px] space-y-5">
 
-        <input
-          type="text"
+        <label className="block text-sm font-semibold text-gray-700">
+          OpenRouter Model
+        </label>
+
+        <select
           value={settings.model}
           onChange={(e) =>
             setSettings({
@@ -42,19 +53,49 @@ const Settings = () => {
               model: e.target.value,
             })
           }
-          className="border p-3 w-full"
-        />
+          className="border p-3 w-full rounded"
+        >
+          {modelOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+
+        <label className="block text-sm font-semibold text-gray-700">
+          Temperature
+        </label>
 
         <input
           type="number"
+          step="0.1"
+          min="0"
+          max="1"
           value={settings.temperature}
           onChange={(e) =>
             setSettings({
               ...settings,
-              temperature: e.target.value,
+              temperature: Number(e.target.value),
             })
           }
-          className="border p-3 w-full"
+          className="border p-3 w-full rounded"
+        />
+
+        <label className="block text-sm font-semibold text-gray-700">
+          Top K
+        </label>
+
+        <input
+          type="number"
+          min="1"
+          value={settings.top_k}
+          onChange={(e) =>
+            setSettings({
+              ...settings,
+              top_k: Number(e.target.value),
+            })
+          }
+          className="border p-3 w-full rounded"
         />
 
         <button

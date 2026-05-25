@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 
 const Dashboard = () => {
-
   const [stats, setStats] = useState({
     total_users: 0,
     total_chats: 0,
@@ -11,11 +10,9 @@ const Dashboard = () => {
   });
 
   useEffect(() => {
-
     fetch("http://localhost:8080/admin/dashboard")
       .then((res) => res.json())
       .then((data) => setStats(data));
-
   }, []);
 
   return (
