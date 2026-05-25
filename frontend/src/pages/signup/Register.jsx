@@ -1,16 +1,35 @@
+import { useState} from "react";
+import axios from "axios";
 import { Link } from "react-router-dom";
 export default function Register() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const handleRegister = (e) => {
-
+  const handleRegister = async (e) => {
     e.preventDefault();
 
-    localStorage.setItem(
-      "token",
-      "loggedin"
-    );
+    try {
+
+    const res = await axios.post("http://localhost:8080/api/auth/register", {
+      name,
+      email,
+      password,
+    });
+
+    if (res.data.success) {
+      alert("Registration Successful");
+
+      window.location.href = "/signin";
+    }
+
+    localStorage.setItem("token", "loggedin");
 
     window.location.href = "/";
+    } catch (error) {
+      console.log(error);
+      alert("Registration Failed");
+    }
   };
 
   return (
@@ -76,6 +95,8 @@ export default function Register() {
                 outline-none
                 transition-all
               "
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
 
           </div>
@@ -107,6 +128,8 @@ export default function Register() {
                 outline-none
                 transition-all
               "
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
 
           </div>
@@ -138,6 +161,8 @@ export default function Register() {
                 outline-none
                 transition-all
               "
+              value={password}              
+              onChange={(e) => setPassword(e.target.value)}
             />
 
           </div>

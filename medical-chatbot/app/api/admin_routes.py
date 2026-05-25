@@ -1,16 +1,36 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from app.database.schema import (
-    chat_messages,chat_threads,
+    chat_messages,
+    chat_threads,
     documents_collection,
-    prompt_collection
+    prompt_collection,
+    analytics_collection,
+    users_collection
 )
 from app.services.ingest_data import ingest_documents
 
 from datetime import datetime
 from werkzeug.utils import secure_filename
+from bson import ObjectId
 
 import os
 import uuid
+
+
+def convert_mongo_value(value):
+    if isinstance(value, ObjectId):
+        return str(value)
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, dict):
+        return {k: convert_mongo_value(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [convert_mongo_value(v) for v in value]
+    return value
+
+
+def convert_mongo_doc(doc):
+    return convert_mongo_value(doc)
 
 # Blueprint
 admin_bp = Blueprint("admin", __name__)
@@ -24,27 +44,83 @@ def dashboard():
 
     total_chats = chat_threads.count_documents({})
     total_docs = documents_collection.count_documents({})
+    total_users = users_collection.count_documents({})
+    analytics = analytics_collection.find_one({}, {"_id": 0}) or {}
 
-    return {
+    return jsonify({
+        "total_users": total_users,
         "total_chats": total_chats,
         "total_documents": total_docs,
-        "faithfulness": 0.95,
-        "context_recall": 0.94
-    }
+        "faithfulness": analytics.get("faithfulnessScore", 0.95),
+        "context_recall": analytics.get("recallScore", 0.94),
+        "average_response_time": analytics.get("averageResponseTime", 0)
+    })
 
 
 @admin_bp.route("/chats")
 def chats():
 
-    chats = list(
-        chat_threads.find({}, {"_id": 0})
-        .sort("timestamp", -1)
+    raw_chats = list(
+        chat_messages.find({}, {"_id": 0})
+        .sort("createdAt", -1)
         .limit(100)
     )
 
-    return {
+    chats = [convert_mongo_doc(chat) for chat in raw_chats]
+
+    for chat in chats:
+        if "createdAt" in chat and "timestamp" not in chat:
+            chat["timestamp"] = chat["createdAt"]
+
+    return jsonify({
         "chats": chats
-    }
+    })
+
+
+@admin_bp.route("/analytics")
+def analytics():
+
+    daily_chats = list(chat_threads.aggregate([
+        {
+            "$group": {
+                "_id": {
+                    "$dateToString": {
+                        "format": "%Y-%m-%d",
+                        "date": "$createdAt"
+                    }
+                },
+                "count": {"$sum": 1}
+            }
+        },
+        {"$sort": {"_id": 1}}
+    ]))
+
+    top_topics = list(chat_threads.aggregate([
+        {
+            "$group": {
+                "_id": "$title",
+                "count": {"$sum": 1}
+            }
+        },
+        {"$sort": {"count": -1}},
+        {"$limit": 10}
+    ]))
+
+    analytics = analytics_collection.find_one({}, {"_id": 0}) or {}
+
+    return jsonify({
+        "daily_chats": [
+            {"date": item["_id"], "count": item["count"]}
+            for item in daily_chats
+        ],
+        "top_topics": [
+            {"topic": item["_id"], "count": item["count"]}
+            for item in top_topics
+        ],
+        "avg_response_time": analytics.get("averageResponseTime", 0),
+        "faithfulness": analytics.get("faithfulnessScore", 0.95),
+        "context_recall": analytics.get("recallScore", 0.94)
+    })
 
 
 @admin_bp.route("/upload-pdf", methods=["POST"])

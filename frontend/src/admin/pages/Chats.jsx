@@ -8,7 +8,7 @@ const Chats = () => {
 
     fetch("http://localhost:8080/admin/chats")
       .then((res) => res.json())
-      .then((data) => setChats(data));
+      .then((data) => setChats(data.chats || data));
 
   }, []);
 
@@ -25,8 +25,8 @@ const Chats = () => {
 
           <thead className="bg-gray-200">
             <tr>
-              <th className="p-4 text-left">Question</th>
-              <th className="p-4 text-left">Answer</th>
+              <th className="p-4 text-left">Role</th>
+              <th className="p-4 text-left">Message</th>
               <th className="p-4 text-left">Time</th>
             </tr>
           </thead>
@@ -37,16 +37,16 @@ const Chats = () => {
 
               <tr key={index} className="border-t">
 
-                <td className="p-4">
-                  {chat.question}
+                <td className="p-4 capitalize">
+                  {chat.role}
                 </td>
 
                 <td className="p-4">
-                  {chat.answer}
+                  {chat.content}
                 </td>
 
                 <td className="p-4">
-                  {new Date(chat.timestamp).toLocaleString()}
+                  {chat.timestamp ? new Date(chat.timestamp).toLocaleString() : "-"}
                 </td>
 
               </tr>
