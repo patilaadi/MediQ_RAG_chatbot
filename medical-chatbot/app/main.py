@@ -3,6 +3,7 @@ from flask_cors import CORS
 from app.api.auth_routes import auth_bp
 from app.api.chat_routes import chat_bp
 from app.api.admin_routes import admin_bp
+from app.api.report_routes import report_bp
 from api.routes import routes
 import app.database.schema
 
@@ -12,6 +13,7 @@ app.register_blueprint(routes, url_prefix="/api")
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(chat_bp, url_prefix="/api")
 app.register_blueprint(admin_bp, url_prefix="/admin")
+app.register_blueprint(report_bp, url_prefix="/api")
 
 
 @app.route("/")

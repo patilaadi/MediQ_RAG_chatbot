@@ -76,6 +76,82 @@ def chats():
     return jsonify({"chats": chats})
 
 
+@admin_bp.route("/chats-data")
+def chats_data():
+    threads = list(chat_threads.find({"isDeleted": False}).sort("lastMessageAt", -1))
+
+    users = {}
+    threads_by_user = {}
+
+    for thread in threads:
+        user_id = thread.get("userId")
+        if not user_id:
+            continue
+
+        user_key = str(user_id)
+        if user_key not in users:
+            user_record = users_collection.find_one(
+                {"_id": user_id}, {"name": 1, "email": 1}
+            )
+            users[user_key] = {
+                "userId": user_key,
+                "name": (
+                    user_record.get("name", "Unknown") if user_record else "Unknown"
+                ),
+                "email": user_record.get("email", "") if user_record else "",
+                "threadCount": 0,
+                "lastActive": thread.get("lastMessageAt") or thread.get("createdAt"),
+            }
+
+        thread_info = {
+            "threadId": str(thread["_id"]),
+            "title": thread.get("title", "New Chat"),
+            "createdAt": thread.get("createdAt"),
+            "lastMessageAt": thread.get("lastMessageAt"),
+        }
+
+        threads_by_user.setdefault(user_key, []).append(thread_info)
+        users[user_key]["threadCount"] += 1
+
+        if (
+            thread.get("lastMessageAt")
+            and users[user_key]["lastActive"]
+            and thread["lastMessageAt"] > users[user_key]["lastActive"]
+        ):
+            users[user_key]["lastActive"] = thread["lastMessageAt"]
+
+    return jsonify(
+        {
+            "users": [convert_mongo_doc(user) for user in users.values()],
+            "threadsByUser": {
+                user_id: [convert_mongo_doc(thread) for thread in thread_list]
+                for user_id, thread_list in threads_by_user.items()
+            },
+        }
+    )
+
+
+@admin_bp.route("/chats/thread/<thread_id>")
+def chat_thread_messages(thread_id):
+    messages = list(
+        chat_messages.find({"threadId": ObjectId(thread_id)}).sort("createdAt", 1)
+    )
+
+    return jsonify(
+        {
+            "threadId": thread_id,
+            "messages": [
+                {
+                    "role": msg.get("role", "user"),
+                    "content": msg.get("content", ""),
+                    "createdAt": msg.get("createdAt"),
+                }
+                for msg in messages
+            ],
+        }
+    )
+
+
 @admin_bp.route("/analytics")
 def analytics():
 
