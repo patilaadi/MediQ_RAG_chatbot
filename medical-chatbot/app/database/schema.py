@@ -16,7 +16,7 @@ admin_schema = {
     "role": "admin",
     "isActive": True,
     "createdAt": datetime.now(timezone.utc),
-    "updatedAt": datetime.now(timezone.utc)
+    "updatedAt": datetime.now(timezone.utc),
 }
 
 admin_collection.create_index("email", unique=True)
@@ -35,11 +35,10 @@ user_schema = {
     "role": "user",
     "isActive": True,
     "createdAt": datetime.now(timezone.utc),
-    "updatedAt": datetime.now(timezone.utc)
+    "updatedAt": datetime.now(timezone.utc),
 }
 
 users_collection.create_index("email", unique=True)
-
 
 
 # =========================
@@ -50,11 +49,11 @@ chat_threads = db["chat_threads"]
 
 chat_thread_schema = {
     "userId": ObjectId,
-    "title": "New Chat",   # AI-generated title
+    "title": "New Chat",  # AI-generated title
     "createdAt": datetime.now(timezone.utc),
     "updatedAt": datetime.now(timezone.utc),
     "lastMessageAt": datetime.now(timezone.utc),
-    "isDeleted": False
+    "isDeleted": False,
 }
 
 
@@ -65,14 +64,14 @@ chat_thread_schema = {
 chat_messages = db["chat_messages"]
 
 chat_message_schema = {
-    "threadId": ObjectId,   # chat session link
+    "threadId": ObjectId,  # chat session link
     "userId": ObjectId,
     "role": "user/assistant",
     "content": str,
     "responseTime": float,
     "sourceDocuments": [],
     "feedback": "good/bad/none",
-    "createdAt": datetime.now(timezone.utc)
+    "createdAt": datetime.now(timezone.utc),
 }
 
 # =========================
@@ -89,7 +88,7 @@ document_schema = {
     "embeddingModel": "text-embedding-3-small",
     "status": "processing/completed/failed",
     "createdAt": datetime.now(timezone.utc),
-    "updatedAt": datetime.now(timezone.utc)
+    "updatedAt": datetime.now(timezone.utc),
 }
 
 # =========================
@@ -107,8 +106,25 @@ analytics_schema = {
     "recallScore": 0,
     "faithfulnessScore": 0,
     "createdAt": datetime.now(timezone.utc),
-    "updatedAt": datetime.now(timezone.utc)
+    "updatedAt": datetime.now(timezone.utc),
 }
+
+# =========================
+# OTP Collection
+# =========================
+
+otp_collection = db["otps"]
+
+otp_schema = {
+    "email": str,
+    "code": str,
+    "purpose": str,
+    "verified": False,
+    "expiresAt": datetime.now(timezone.utc),
+    "createdAt": datetime.now(timezone.utc),
+}
+
+otp_collection.create_index("email")
 
 # =========================
 # Prompt Settings Collection
@@ -123,7 +139,7 @@ prompt_schema = {
     "modelName": "gpt-4o-mini",
     "isActive": True,
     "createdAt": datetime.now(timezone.utc),
-    "updatedAt": datetime.now(timezone.utc)
+    "updatedAt": datetime.now(timezone.utc),
 }
 
 print("All Collections Initialized Successfully")

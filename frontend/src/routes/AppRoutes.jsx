@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import SignupPage from "../pages/signup/SignupPage";
+import HomePage from "../pages/HomePage";
 import ChatPage from "../pages/ChatPage";
 import Register from "../pages/signup/Register";
 import ProtectedRoute from "./ProtectedRoute";
@@ -11,6 +12,8 @@ import Documents from "../admin/pages/Documents";
 import Analytics from "../admin/pages/Analytics";
 import Settings from "../admin/pages/Settings";
 import AdminLayout from "../admin/pages/Admin_layout";
+import VerifyEmail from "../pages/signup/VerifyEmail";
+
 
 const AppRoutes = () => {
   const token = localStorage.getItem("token");
@@ -18,16 +21,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* Home */}
-      <Route
-        path="/"
-        element={
-          token ? (
-            <Navigate to="/signin" replace />
-          ) : (
-            <Navigate to="/signin" replace />
-          )
-        }
-      />
+      <Route path="/" element={<HomePage />} />
       <Route
         path="/admin"
         element={
@@ -52,6 +46,9 @@ const AppRoutes = () => {
 
       {/* Register */}
       <Route path="/register" element={<Register />} />
+
+      {/* Verify Email */}
+      <Route path="/verify-email" element={<VerifyEmail />} />
 
       {/* Chat */}
       <Route

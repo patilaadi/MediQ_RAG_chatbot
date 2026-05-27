@@ -14,5 +14,10 @@ def analyze_report():
     if not report_text:
         return jsonify({"error": "report_text is required"}), 400
 
-    result = analyze_medical_report(report_text, model=model or "gpt-4o-mini", temperature=temperature)
-    return jsonify(result)
+    result = analyze_medical_report(
+        report_text, model=model or "gpt-4o-mini", temperature=temperature
+    )
+    return jsonify({
+        "success": True,
+        "analysis": result.get("result") or result.get("error") or result,
+        "error": result.get("error")    }), 200 if "result" in result else 500

@@ -72,6 +72,9 @@ def send_message():
         })
         print("Thread Found:", thread)
 
+        # Ensure we always have a thread object to reference later
+        updated_thread = thread
+
         if thread and thread["title"] == "New Chat":
 
             title = user_msg[:30]
@@ -87,7 +90,7 @@ def send_message():
             )
             print("Thread updated with new title:", title)
 
-            # 🔥 RE-FETCH UPDATED THREAD
+             # 🔥 RE-FETCH UPDATED THREAD after title update
             updated_thread = chat_threads.find_one({"_id": thread_id})
 
         # 2. Get AI response
@@ -182,7 +185,7 @@ def get_messages(thread_id):
 # =========================
 # GET THREAD
 # =========================
-@chat_bp.route("/threads/<user_id>", methods=["GET"])
+@chat_bp.route("/threads/user/<user_id>", methods=["GET"])
 def get_threads(user_id):
 
     threads = chat_threads.find({

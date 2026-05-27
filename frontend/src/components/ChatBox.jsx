@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { SendHorizonal, Paperclip } from "lucide-react";
+import { SendHorizontal, Paperclip } from "lucide-react";
 import TypingLoader from "./TypingLoader";
 
 import { formatName } from "../utils/modifyName";
 
 const ChatBox = () => {
-  const { name } = useParams();
-  const { threadId } = useParams();
+  const { name, threadId } = useParams();
   const cleanName = formatName(name);
 
   const [message, setMessage] = useState("");
@@ -113,6 +112,111 @@ const ChatBox = () => {
       handleSend();
     }
   };
+
+  // File upload refs & state
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [analysis, setAnalysis] = useState(null);
+  const [showAnalysisOptions, setShowAnalysisOptions] = useState(false);
+
+  const handleFileClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const getAnalysisText = (opt) => {
+    if (!analysis) return "";
+    const key = opt.toLowerCase();
+    let val = analysis[key] || analysis[`${key}s`] || analysis[`${key}_text`];
+    if (Array.isArray(val)) return val.join("\n\n");
+    if (typeof val === "object") return JSON.stringify(val, null, 2);
+    return val || "";
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      setMessages((prev) => [
+        ...prev,
+        { sender: "assistant", text: "Only PDF files are allowed." },
+      ]);
+      e.target.value = "";
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("analyze", "true");
+
+      const res = await fetch("http://localhost:8080/api/upload-report", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        setMessages((prev) => [
+          ...prev,
+          { sender: "assistant", text: `Upload failed: ${data.message || ""}` },
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          { sender: "assistant", text: `Uploaded ${file.name}` },
+        ]);
+        if (data.analysis) {
+          setAnalysis(data.analysis);
+          setShowAnalysisOptions(true);
+        } else {
+          setMessages((prev) => [
+            ...prev,
+            { sender: "assistant", text: "Report uploaded. Analysis not available." },
+          ]);
+        }
+      }
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        { sender: "assistant", text: "Upload error" },
+      ]);
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleAnalysisSelect = (opt) => {
+    setShowAnalysisOptions(false);
+    if (!analysis) return;
+    if (opt === "Ask") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "assistant",
+          text: "You can now ask follow-up questions about the uploaded report.",
+        },
+      ]);
+      // focus the textarea for the user to type
+      return;
+    }
+
+    const text = getAnalysisText(opt);
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "assistant",
+        text: text || "No information available for this section.",
+      },
+    ]);
+  };
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -217,16 +321,30 @@ const ChatBox = () => {
           "
         >
           {/* Attachment */}
-          <button
-            className="
-              text-gray-400
-              hover:text-white
-              transition-all
-              pb-2
-            "
-          >
-            <Paperclip size={22} />
-          </button>
+          <div className="flex items-center gap-2">
+            <input
+              type="file"
+              accept="application/pdf"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <button
+              onClick={handleFileClick}
+              className="
+                text-gray-400
+                hover:text-white
+                transition-all
+                pb-2
+              "
+              title="Upload PDF report"
+            >
+              <Paperclip size={22} />
+            </button>
+            {uploading && (
+              <span className="text-xs text-gray-300">Uploading...</span>
+            )}
+          </div>
 
           {/* Textarea */}
           <textarea
@@ -267,9 +385,23 @@ const ChatBox = () => {
               disabled:cursor-not-allowed
             "
           >
-            <SendHorizonal size={18} />
+            <SendHorizontal size={18} />
           </button>
         </div>
+
+        {showAnalysisOptions && (
+          <div className="max-w-4xl mx-auto mt-2 flex gap-2">
+            {["Causes", "Precautions", "Medicines", "Ask"].map((opt) => (
+              <button
+                key={opt}
+                onClick={() => handleAnalysisSelect(opt)}
+                className="bg-[#2A2B32] text-white px-3 py-2 rounded-md hover:bg-[#3a3b41]"
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Footer */}
         <p
@@ -284,6 +416,8 @@ const ChatBox = () => {
         </p>
       </div>
     </div>
+  
+
   );
 };
 
