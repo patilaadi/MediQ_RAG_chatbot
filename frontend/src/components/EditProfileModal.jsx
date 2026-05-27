@@ -55,48 +55,64 @@ const EditProfileModal = ({ open, setOpen, user, setUser }) => {
   };
 
   // Save Profile
-  const handleSave = async () => {
-    try {
-      const token = localStorage.getItem("token");
+ const handleSave = async () => {
+   try {
+     const token = localStorage.getItem("token");
 
-      console.log(token);
+     // ================= FORMDATA =================
+     const sendData = new FormData();
 
-      const response = await fetch("http://localhost:8080/api/users/profile", {
-        method: "PUT",
+     sendData.append("name", formData.name);
+     sendData.append("email", formData.email);
 
-        headers: {
-          "Content-Type": "application/json",
+     // IMAGE FILE
+     if (selectedFile) {
+       sendData.append("profile", selectedFile);
+     }
 
-          Authorization: `Bearer ${token}`,
-        },
+     // ================= API =================
+     const response = await fetch("http://localhost:8080/api/users/profile", {
+       method: "PUT",
 
-        body: JSON.stringify(formData),
-      });
+       headers: {
+         Authorization: `Bearer ${token}`,
+       },
 
-      const data = await response.json();
+       body: sendData,
+     });
 
-      if (!response.ok) {
-        alert(data.message || "Update Failed");
+     const data = await response.json();
 
-        return;
-      }
+     console.log(data);
 
-      // Update frontend state
-      setUser(data.user);
+     if (!response.ok) {
+       alert(data.message || "Update Failed");
 
-      // Update localStorage
-      localStorage.setItem("user", JSON.stringify(data.user));
+       return;
+     }
 
-      alert("Profile Updated");
+     // ================= UPDATE USER =================
+     const updatedUser = {
+       ...data.user,
 
-      setOpen(false);
-    } catch (error) {
-      console.log(error);
+       picture: data.user.picture
+         ? `http://localhost:8080/${data.user.picture}?t=${Date.now()}`
+         : "",
+     };
 
-      alert("Something went wrong");
-    }
-  };
+     setUser(updatedUser);
 
+     localStorage.setItem("user", JSON.stringify(updatedUser));
+
+     alert("Profile Updated");
+
+     setOpen(false);
+   } catch (error) {
+     console.log(error);
+
+     alert("Something went wrong");
+   }
+ };
   if (!open) return null;
 
   return (
@@ -176,7 +192,13 @@ const EditProfileModal = ({ open, setOpen, user, setUser }) => {
           >
             <div className="relative">
               <img
-                src={formData.picture || ""}
+                src={
+                  formData.picture
+                    ? formData.picture.startsWith("blob:")
+                      ? formData.picture
+                      : `http://localhost:8080/${formData.picture}`
+                    : "https://i.pravatar.cc/150"
+                }
                 alt="profile"
                 className="
                   w-24

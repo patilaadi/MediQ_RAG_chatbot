@@ -26,7 +26,7 @@ def update_profile():
 
     try:
 
-        # Get Token
+        # ================= TOKEN =================
         auth_header = request.headers.get("Authorization")
 
         if not auth_header:
@@ -35,35 +35,52 @@ def update_profile():
 
         token = auth_header.split(" ")[1]
 
-        # Decode JWT
         decoded = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        print(decoded)
 
         user_id = decoded["id"]
 
-        # Get Form Data
-        data = request.json
+        # ================= FORM DATA =================
+        name = request.form.get("name")
+        email = request.form.get("email")
 
-        name = data.get("name")
-        email = data.get("email")
-        picture = data.get("picture")
+        # ================= FILE =================
+        picture = request.files.get("profile")
 
-        # Update MongoDB
+        print(request.files)
+
+        # ================= EXISTING USER =================
+        existing_user = users.find_one({"_id": ObjectId(user_id)})
+
+        picture_url = existing_user.get("picture", "")
+
+        # ================= SAVE IMAGE =================
+        if picture:
+
+            os.makedirs("uploads", exist_ok=True)
+
+            filename = f"{uuid.uuid4()}_{secure_filename(picture.filename)}"
+
+            save_path = os.path.join("uploads", filename)
+
+            picture.save(save_path)
+
+            picture_url = f"uploads/{filename}"
+
+        # ================= UPDATE DB =================
         users.update_one(
             {"_id": ObjectId(user_id)},
             {
                 "$set": {
                     "name": name,
                     "email": email,
-                    "picture": picture,
+                    "picture": picture_url,
                 }
             },
         )
 
-        # Get Updated User
+        # ================= UPDATED USER =================
         updated_user = users.find_one({"_id": ObjectId(user_id)})
 
-        # Convert ObjectId to String
         updated_user["_id"] = str(updated_user["_id"])
 
         return jsonify(
@@ -75,6 +92,8 @@ def update_profile():
         )
 
     except Exception as e:
+
+        print(e)
 
         return (
             jsonify(
