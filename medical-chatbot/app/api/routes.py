@@ -1,6 +1,6 @@
 import jwt
 from flask import Blueprint, request, jsonify
-from app.database.schema import users_collection as users
+from app.database.schema import users_collection as users, contact_requests
 from bson import ObjectId
 from dotenv import load_dotenv
 import os
@@ -225,6 +225,50 @@ def change_password():
         users.update_one({"_id": ObjectId(user_id)}, {"$set": {"password": new}})
 
         return jsonify({"success": True, "message": "Password changed"}), 200
+
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@routes.route("/contact", methods=["POST"])
+def submit_contact():
+    try:
+        data = request.json or {}
+        first_name = (data.get("firstName") or "").strip()
+        last_name = (data.get("lastName") or "").strip()
+        email = (data.get("email") or "").strip()
+        message = (data.get("message") or "").strip()
+
+        if not first_name or not last_name or not email or not message:
+            return (
+                jsonify({"success": False, "message": "All fields are required."}),
+                400,
+            )
+
+        if "@" not in email or "." not in email:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Please provide a valid email address.",
+                    }
+                ),
+                400,
+            )
+
+        contact_requests.insert_one(
+            {
+                "firstName": first_name,
+                "lastName": last_name,
+                "email": email,
+                "message": message,
+                "status": "new",
+                "createdAt": datetime.utcnow(),
+                "updatedAt": datetime.utcnow(),
+            }
+        )
+
+        return jsonify({"success": True, "message": "Contact request saved."}), 200
 
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500

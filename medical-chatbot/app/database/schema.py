@@ -110,6 +110,24 @@ analytics_schema = {
 }
 
 # =========================
+# Contact Requests Collection
+# =========================
+
+contact_requests = db["contact_requests"]
+
+contact_request_schema = {
+    "firstName": str,
+    "lastName": str,
+    "email": str,
+    "message": str,
+    "status": "new",
+    "createdAt": datetime.now(timezone.utc),
+    "updatedAt": datetime.now(timezone.utc),
+}
+
+contact_requests.create_index("email")
+
+# =========================
 # OTP Collection
 # =========================
 

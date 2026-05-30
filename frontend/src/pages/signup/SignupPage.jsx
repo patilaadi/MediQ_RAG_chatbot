@@ -26,13 +26,13 @@ export default function SignupPage() {
     e.preventDefault();
 
     try {
-      // ================= ADMIN CHECK =================
-
-      // ================= NORMAL USER LOGIN =================
-      const res = await axios.post("http://localhost:8080/api/auth/login", {
-        email,
-        password,
-      });
+      const res = await axios.post(
+        "http://localhost:8080/api/auth/login",
+        {
+          email,
+          password,
+        },
+      );
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("email", res.data.user.email);
@@ -64,6 +64,7 @@ export default function SignupPage() {
       alert("Login Failed");
     }
   };
+
   // =========================
   // GOOGLE LOGIN
   // =========================
@@ -73,9 +74,6 @@ export default function SignupPage() {
 
       const user = result.user;
 
-      console.log(user);
-
-      // Send ONLY user data to backend
       const res = await axios.post(
         "http://localhost:8080/api/auth/google-login",
         {
@@ -85,10 +83,6 @@ export default function SignupPage() {
         },
       );
 
-      console.log(res.data);
-      const role = res.data.role || res.data.user.role;
-
-      // Store backend JWT ONLY
       localStorage.setItem("token", res.data.token);
 
       localStorage.setItem("role", res.data.user.role);
@@ -96,13 +90,10 @@ export default function SignupPage() {
       localStorage.setItem("email", user.email);
 
       localStorage.setItem("userId", res.data.user.id);
-      console.log("User ID stored:", res.data.user.id);
 
-      // Redirect
       if (res.data.user.role === "admin") {
         navigate("/admin/dashboard");
       } else {
-        // CREATE THREAD
         const threadRes = await fetch(
           "http://localhost:8080/api/threads/create",
           {
@@ -118,7 +109,6 @@ export default function SignupPage() {
 
         const threadData = await threadRes.json();
 
-        // REDIRECT
         navigate(`/chat/${res.data.user.name}/${threadData.threadId}`);
       }
     } catch (error) {
@@ -127,6 +117,9 @@ export default function SignupPage() {
     }
   };
 
+  // =========================
+  // SEND OTP
+  // =========================
   const handleSendResetOtp = async () => {
     if (!email) {
       setMessage("Enter your email to receive a reset OTP.");
@@ -137,13 +130,17 @@ export default function SignupPage() {
     setMessage("");
 
     try {
-      const res = await axios.post("http://localhost:8080/api/auth/send-otp", {
-        email,
-        purpose: "forgot-password",
-      });
+      const res = await axios.post(
+        "http://localhost:8080/api/auth/send-otp",
+        {
+          email,
+          purpose: "forgot-password",
+        },
+      );
 
       if (res.data.success) {
         setOtpSent(true);
+
         setMessage(
           "OTP sent to your email. Enter it below to reset your password.",
         );
@@ -152,12 +149,16 @@ export default function SignupPage() {
       }
     } catch (error) {
       console.error(error);
+
       setMessage("Unable to send OTP. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  // =========================
+  // RESET PASSWORD
+  // =========================
   const handleResetPassword = async (e) => {
     e.preventDefault();
 
@@ -183,16 +184,19 @@ export default function SignupPage() {
         alert(
           "Password reset successful. Please sign in with your new password.",
         );
+
         setIsResetMode(false);
         setOtpSent(false);
         setResetOtp("");
         setResetPassword("");
+
         return;
       }
 
       setMessage(res.data.message || "Reset failed. Please try again.");
     } catch (error) {
       console.error(error);
+
       setMessage("Password reset failed. Please try again.");
     } finally {
       setLoading(false);
@@ -200,11 +204,102 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#343541] flex items-center justify-center px-4 p-10">
-      <div className="w-full max-w-md bg-[#202123] rounded-2xl shadow-2xl p-8 border border-gray-700">
+    <div className="min-h-screen bg-[#343541] flex items-center justify-center px-4 p-10 relative overflow-hidden">
+
+      {/* ================= BACKGROUND EFFECTS ================= */}
+
+      {/* TOP LEFT GLOW */}
+      <div
+        className="
+          absolute
+          w-96
+          h-96
+          bg-green-500/20
+          blur-3xl
+          rounded-full
+          -top-24
+          -left-24
+          animate-pulse
+        "
+      ></div>
+
+      {/* BOTTOM RIGHT GLOW */}
+      <div
+        className="
+          absolute
+          w-[500px]
+          h-[500px]
+          bg-cyan-500/20
+          blur-3xl
+          rounded-full
+          -bottom-32
+          -right-32
+          animate-pulse
+        "
+      ></div>
+
+      {/* CENTER GLOW */}
+      <div
+        className="
+          absolute
+          top-1/2
+          left-1/2
+          -translate-x-1/2
+          -translate-y-1/2
+          w-[300px]
+          h-[300px]
+          bg-green-400/10
+          blur-3xl
+          rounded-full
+        "
+      ></div>
+
+      {/* GRID EFFECT */}
+      <div
+        className="
+          absolute
+          inset-0
+          opacity-10
+          [background-image:linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)]
+          [background-size:40px_40px]
+        "
+      ></div>
+
+      {/* ================= LOGIN CARD ================= */}
+
+      <div
+        className="
+          relative
+          z-10
+          w-full
+          max-w-md
+          bg-[#202123]/90
+          backdrop-blur-xl
+          rounded-3xl
+          shadow-2xl
+          p-8
+          border
+          border-gray-700
+        "
+      >
         {/* Logo */}
         <div className="flex justify-center mb-6">
-          <div className="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center text-white text-2xl font-bold">
+          <div
+            className="
+              w-16
+              h-16
+              rounded-full
+              bg-green-500
+              flex
+              items-center
+              justify-center
+              text-white
+              text-3xl
+              font-bold
+              shadow-lg
+              shadow-green-500/40
+            "
+          >
             🩺
           </div>
         </div>
@@ -222,15 +317,32 @@ export default function SignupPage() {
         {isResetMode ? (
           <form className="space-y-5" onSubmit={handleResetPassword}>
             {message && (
-              <p className="text-sm text-yellow-300 text-center">{message}</p>
+              <p className="text-sm text-yellow-300 text-center">
+                {message}
+              </p>
             )}
+
             <div>
-              <label className="block text-sm text-gray-300 mb-2">Email</label>
+              <label className="block text-sm text-gray-300 mb-2">
+                Email
+              </label>
+
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-[#2A2B32] border border-gray-600 text-white rounded-xl px-4 py-3"
+                className="
+                  w-full
+                  bg-[#2A2B32]
+                  border
+                  border-gray-600
+                  text-white
+                  rounded-xl
+                  px-4
+                  py-3
+                  outline-none
+                  focus:border-green-500
+                "
               />
             </div>
 
@@ -238,7 +350,17 @@ export default function SignupPage() {
               type="button"
               onClick={handleSendResetOtp}
               disabled={!email || loading}
-              className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="
+                w-full
+                bg-green-500
+                hover:bg-green-600
+                text-white
+                font-semibold
+                py-3
+                rounded-xl
+                transition-all
+                disabled:opacity-50
+              "
             >
               {otpSent ? "Resend OTP" : "Send OTP"}
             </button>
@@ -247,11 +369,23 @@ export default function SignupPage() {
               <label className="block text-sm text-gray-300 mb-2">
                 OTP Code
               </label>
+
               <input
                 type="text"
                 value={resetOtp}
                 onChange={(e) => setResetOtp(e.target.value)}
-                className="w-full bg-[#2A2B32] border border-gray-600 text-white rounded-xl px-4 py-3"
+                className="
+                  w-full
+                  bg-[#2A2B32]
+                  border
+                  border-gray-600
+                  text-white
+                  rounded-xl
+                  px-4
+                  py-3
+                  outline-none
+                  focus:border-green-500
+                "
               />
             </div>
 
@@ -259,18 +393,40 @@ export default function SignupPage() {
               <label className="block text-sm text-gray-300 mb-2">
                 New Password
               </label>
+
               <input
                 type="password"
                 value={resetPassword}
                 onChange={(e) => setResetPassword(e.target.value)}
-                className="w-full bg-[#2A2B32] border border-gray-600 text-white rounded-xl px-4 py-3"
+                className="
+                  w-full
+                  bg-[#2A2B32]
+                  border
+                  border-gray-600
+                  text-white
+                  rounded-xl
+                  px-4
+                  py-3
+                  outline-none
+                  focus:border-green-500
+                "
               />
             </div>
 
             <button
               type="submit"
               disabled={!email || !resetOtp || !resetPassword || loading}
-              className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              className="
+                w-full
+                bg-green-500
+                hover:bg-green-600
+                text-white
+                font-semibold
+                py-3
+                rounded-xl
+                transition-all
+                disabled:opacity-50
+              "
             >
               Reset Password
             </button>
@@ -282,7 +438,13 @@ export default function SignupPage() {
                 setMessage("");
                 setOtpSent(false);
               }}
-              className="w-full text-center text-green-300 underline mt-2"
+              className="
+                w-full
+                text-center
+                text-green-300
+                underline
+                mt-2
+              "
             >
               Back to Sign In
             </button>
@@ -290,18 +452,33 @@ export default function SignupPage() {
         ) : (
           <>
             {message && (
-              <p className="text-sm text-yellow-300 text-center">{message}</p>
+              <p className="text-sm text-yellow-300 text-center">
+                {message}
+              </p>
             )}
+
             <form className="space-y-5" onSubmit={handleSignin}>
               <div>
                 <label className="block text-sm text-gray-300 mb-2">
                   Email
                 </label>
+
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#2A2B32] border border-gray-600 text-white rounded-xl px-4 py-3"
+                  className="
+                    w-full
+                    bg-[#2A2B32]
+                    border
+                    border-gray-600
+                    text-white
+                    rounded-xl
+                    px-4
+                    py-3
+                    outline-none
+                    focus:border-green-500
+                  "
                 />
               </div>
 
@@ -309,30 +486,55 @@ export default function SignupPage() {
                 <label className="block text-sm text-gray-300 mb-2">
                   Password
                 </label>
+
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#2A2B32] border border-gray-600 text-white rounded-xl px-4 py-3"
+                  className="
+                    w-full
+                    bg-[#2A2B32]
+                    border
+                    border-gray-600
+                    text-white
+                    rounded-xl
+                    px-4
+                    py-3
+                    outline-none
+                    focus:border-green-500
+                  "
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl"
+                className="
+                  w-full
+                  bg-green-500
+                  hover:bg-green-600
+                  text-white
+                  font-semibold
+                  py-3
+                  rounded-xl
+                  transition-all
+                "
               >
                 Sign In
               </button>
             </form>
 
-            <div className="text-right">
+            <div className="text-right mt-3">
               <button
                 type="button"
                 onClick={() => {
                   setIsResetMode(true);
                   setMessage("");
                 }}
-                className="text-sm text-green-400 hover:text-green-300"
+                className="
+                  text-sm
+                  text-green-400
+                  hover:text-green-300
+                "
               >
                 Forgot password?
               </button>
@@ -343,26 +545,45 @@ export default function SignupPage() {
         {/* Divider */}
         <div className="flex items-center my-6">
           <div className="flex-1 h-px bg-gray-700"></div>
+
           <span className="px-3 text-gray-500 text-sm">OR</span>
+
           <div className="flex-1 h-px bg-gray-700"></div>
         </div>
 
         {/* Google Login */}
         <button
           onClick={handleGoogleLogin}
-          className="w-full border border-gray-600 hover:bg-[#2A2B32] text-white py-3 rounded-xl flex items-center justify-center gap-3"
+          className="
+            w-full
+            border
+            border-gray-600
+            hover:bg-[#2A2B32]
+            text-white
+            py-3
+            rounded-xl
+            flex
+            items-center
+            justify-center
+            gap-3
+            transition-all
+          "
         >
           <img
             src="https://www.svgrepo.com/show/475656/google-color.svg"
             className="w-5 h-5"
           />
+
           Continue with Google
         </button>
 
         {/* Footer */}
         <p className="text-center text-gray-400 text-sm mt-8">
           Don't have an account?{" "}
-          <Link to="/verify-email" className="text-green-400">
+          <Link
+            to="/verify-email"
+            className="text-green-400 hover:text-green-300"
+          >
             Create account
           </Link>
         </p>

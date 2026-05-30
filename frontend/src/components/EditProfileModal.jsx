@@ -194,12 +194,14 @@ const EditProfileModal = ({ open, setOpen, user, setUser }) => {
               <img
                 src={
                   formData.picture
-                    ? formData.picture.startsWith("blob:")
+                    ? formData.picture.startsWith("blob:") ||
+                      formData.picture.startsWith("http")
                       ? formData.picture
                       : `http://localhost:8080/${formData.picture}`
                     : "https://i.pravatar.cc/150"
                 }
                 alt="profile"
+                referrerPolicy="no-referrer"
                 className="
                   w-24
                   h-24

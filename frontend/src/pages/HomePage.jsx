@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import {
   HeartPulse,
   ShieldCheck,
@@ -8,6 +9,83 @@ import {
 } from "lucide-react";
 
 export default function HomePage() {
+  const [contactData, setContactData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    message: "",
+  });
+  const [contactError, setContactError] = useState("");
+  const [contactSuccess, setContactSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const validateContact = () => {
+    const { firstName, lastName, email, message } = contactData;
+    if (
+      !firstName.trim() ||
+      !lastName.trim() ||
+      !email.trim() ||
+      !message.trim()
+    ) {
+      return "Please fill out all fields.";
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return "Please enter a valid email address.";
+    }
+
+    if (message.trim().length < 10) {
+      return "Please describe your request in at least 10 characters.";
+    }
+
+    return "";
+  };
+
+  const handleContactChange = (e) => {
+    setContactData({
+      ...contactData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    setContactError("");
+    setContactSuccess(false);
+
+    const validationMsg = validateContact();
+    if (validationMsg) {
+      setContactError(validationMsg);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("http://localhost:8080/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(contactData),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setContactError(data.message || "Unable to send your message.");
+        return;
+      }
+
+      setContactSuccess(true);
+      setContactData({ firstName: "", lastName: "", email: "", message: "" });
+    } catch (error) {
+      setContactError("Network error. Please try again later.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0B1120] text-white overflow-hidden">
       {/* Animated Background */}
@@ -367,73 +445,312 @@ export default function HomePage() {
       {/* Contact */}
       <section
         id="contact"
-        className="relative z-10 max-w-6xl mx-auto px-6 pb-20"
+        className="relative z-10 max-w-7xl mx-auto px-6 pb-24"
       >
         <div
           className="
-            relative
-            overflow-hidden
-            rounded-[40px]
-            p-12
-            bg-gradient-to-r
-            from-green-500
-            via-cyan-500
-            to-blue-500
-            text-black
-            shadow-2xl
-          "
+      relative
+      overflow-hidden
+      rounded-[40px]
+      border
+      border-white/10
+      bg-white/5
+      backdrop-blur-2xl
+      shadow-2xl
+    "
         >
-          <div className="absolute top-0 right-0 w-60 h-60 bg-white/20 rounded-full blur-3xl animate-pulse"></div>
+          {/* Glow Effects */}
+          <div className="absolute -top-20 -left-20 w-72 h-72 bg-green-500/20 rounded-full blur-3xl animate-pulse"></div>
 
-          <div className="absolute bottom-0 left-0 w-72 h-72 bg-black/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl animate-pulse"></div>
 
-          <div className="grid lg:grid-cols-2 gap-12 items-center relative z-10">
-            {/* Left */}
-            <div>
-              <p className="uppercase tracking-[0.3em] font-semibold mb-4">
-                Contact MediQ AI
+          <div className="grid lg:grid-cols-2 relative z-10">
+            {/* LEFT SIDE */}
+            <div className="p-10 lg:p-16 flex flex-col justify-center">
+              <p className="uppercase tracking-[0.3em] text-green-400 font-semibold mb-4">
+                Contact Us
               </p>
 
               <h2 className="text-5xl font-black leading-tight mb-6">
-                We’re Here
-                <span className="block">To Help You</span>
+                Let’s Build
+                <span className="text-green-400 block">Smarter Healthcare</span>
               </h2>
 
-              <p className="text-lg font-medium mb-10">
-                Need help with reports, AI analysis, or account setup? Contact
-                our support team anytime.
+              <p className="text-gray-300 text-lg leading-relaxed mb-10">
+                Have questions about AI medical reports, chatbot analysis,
+                healthcare guidance, or account support? Our MediQ AI team is
+                available anytime to help you.
               </p>
 
-              <div className="space-y-5 text-lg font-semibold">
-                <div className="bg-white/30 backdrop-blur-md rounded-2xl p-4 hover:scale-105 transition-all">
-                  📧 support@mediq.ai
+              {/* Contact Cards */}
+              <div className="space-y-5">
+                <div
+                  className="
+              flex
+              items-center
+              gap-4
+              bg-[#111827]
+              border
+              border-white/10
+              rounded-2xl
+              p-5
+              hover:scale-105
+              transition-all
+            "
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-green-500 flex items-center justify-center text-2xl">
+                    📧
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-gray-400">Email Support</p>
+                    <h4 className="text-lg font-semibold">support@mediq.ai</h4>
+                  </div>
                 </div>
 
-                <div className="bg-white/30 backdrop-blur-md rounded-2xl p-4 hover:scale-105 transition-all">
-                  📞 +91 9876543210
+                <div
+                  className="
+              flex
+              items-center
+              gap-4
+              bg-[#111827]
+              border
+              border-white/10
+              rounded-2xl
+              p-5
+              hover:scale-105
+              transition-all
+            "
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-cyan-500 flex items-center justify-center text-2xl">
+                    📞
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-gray-400">Call Us</p>
+                    <h4 className="text-lg font-semibold">+91 9876543210</h4>
+                  </div>
                 </div>
 
-                <div className="bg-white/30 backdrop-blur-md rounded-2xl p-4 hover:scale-105 transition-all">
-                  📍 Kolhapur, Maharashtra, India
+                <div
+                  className="
+              flex
+              items-center
+              gap-4
+              bg-[#111827]
+              border
+              border-white/10
+              rounded-2xl
+              p-5
+              hover:scale-105
+              transition-all
+            "
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-pink-500 flex items-center justify-center text-2xl">
+                    📍
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-gray-400">Location</p>
+                    <h4 className="text-lg font-semibold">
+                      Kolhapur, Maharashtra, India
+                    </h4>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Right */}
-            <div className="relative">
-              <img
-                src="https://images.unsplash.com/photo-1584515933487-779824d29309?q=80&w=1200&auto=format&fit=crop"
-                alt="Doctor"
+            {/* RIGHT SIDE FORM */}
+            <div className="p-8 lg:p-16 flex items-center justify-center">
+              <div
                 className="
-                  rounded-[35px]
-                  shadow-2xl
+            bg-[#0F172A]
+            border
+            border-white/10
+            rounded-[32px]
+            p-8
+            shadow-2xl
+          "
+              >
+                <p className="uppercase tracking-[0.3em] text-green-400 text-sm font-semibold mb-4">
+                  Send Message
+                </p>
+
+                <h3 className="text-3xl font-black mb-8">How can we help?</h3>
+
+                <form className="space-y-5" onSubmit={handleContactSubmit}>
+                  {/* Name Fields */}
+                  <div className="grid sm:grid-cols-2 gap-5">
+                    <div>
+                      <input
+                        type="text"
+                        name="firstName"
+                        value={contactData.firstName}
+                        onChange={handleContactChange}
+                        placeholder=" First Name"
+                        className="
+                    mt-2
+                    w-full
+                    bg-[#111827]
+                    border
+                    border-white/10
+                    rounded-2xl
+                    px-5
+                    py-4
+                    text-white
+                    outline-none
+                    focus:border-green-400
+                    focus:ring-2
+                    focus:ring-green-400/20
+                    transition-all
+                  "
+                      />
+                    </div>
+
+                    <div>
+                      <input
+                        type="text"
+                        name="lastName"
+                        value={contactData.lastName}
+                        onChange={handleContactChange}
+                        placeholder="Last Name"
+                        className="
+                    mt-2
+                    w-full
+                    bg-[#111827]
+                    border
+                    border-white/10
+                    rounded-2xl
+                    px-5
+                    py-4
+                    text-white
+                    outline-none
+                    focus:border-green-400
+                    focus:ring-2
+                    focus:ring-green-400/20
+                    transition-all
+                  "
+                      />
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    
+
+                    <input
+                      type="email"
+                      name="email"
+                      value={contactData.email}
+                      onChange={handleContactChange}
+                      placeholder="Email Address"
+                      className="
+                  mt-2
+                  w-full
+                  bg-[#111827]
                   border
-                  border-white/20
-                  hover:scale-105
+                  border-white/10
+                  rounded-2xl
+                  px-5
+                  py-4
+                  text-white
+                  outline-none
+                  focus:border-green-400
+                  focus:ring-2
+                  focus:ring-green-400/20
                   transition-all
-                  duration-500
                 "
-              />
+                    />
+                  </div>
+
+                  {/* Message */}
+                  <div>
+                    
+
+                    <textarea
+                      rows={5}
+                      name="message"
+                      value={contactData.message}
+                      onChange={handleContactChange}
+                      placeholder="Write your message..."
+                      className="
+                  mt-2
+                  w-full
+                  bg-[#111827]
+                  border
+                  border-white/10
+                  rounded-2xl
+                  px-5
+                  py-4
+                  text-white
+                  outline-none
+                  resize-none
+                  focus:border-green-400
+                  focus:ring-2
+                  focus:ring-green-400/20
+                  transition-all
+                "
+                    />
+                  </div>
+
+                  {/* Error */}
+                  {contactError && (
+                    <div
+                      className="
+                  bg-red-500/10
+                  border
+                  border-red-500/30
+                  text-red-300
+                  rounded-2xl
+                  p-4
+                  text-sm
+                "
+                    >
+                      {contactError}
+                    </div>
+                  )}
+
+                  {/* Success */}
+                  {contactSuccess && (
+                    <div
+                      className="
+                  bg-green-500/10
+                  border
+                  border-green-500/30
+                  text-green-300
+                  rounded-2xl
+                  p-4
+                  text-sm
+                "
+                    >
+                      Message sent successfully 🚀
+                    </div>
+                  )}
+
+                  {/* Submit */}
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="
+                w-full
+                bg-green-500
+                hover:bg-green-400
+                text-black
+                font-bold
+                py-4
+                rounded-2xl
+                transition-all
+                hover:scale-[1.02]
+                shadow-xl
+                shadow-green-500/20
+                disabled:opacity-60
+                disabled:cursor-not-allowed
+              "
+                  >
+                    {isSubmitting ? "Sending..." : "Send Message"}
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
         </div>
